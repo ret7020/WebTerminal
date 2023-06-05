@@ -1,44 +1,36 @@
-from fastapi import FastAPI, WebSocket
-from fastapi.responses import HTMLResponse
+from fastapi import FastAPI, WebSocket, HTTPException, status
+from fastapi.responses import StreamingResponse
 import uvicorn
 import time
 import subprocess
+from pydantic import BaseModel
+import json
+import signal
+import os
+
+
+class CommandExecIn(BaseModel):
+    command: str
+
 
 app = FastAPI(title="Web Terminal", version="0.0.1")
 
-html = """
-<!DOCTYPE html>
-<html>
-    <head>
-        <title>Chat</title>
-    </head>
-    <body>
-        <h1>WebSocket Chat</h1>
-        <form action="" onsubmit="sendMessage(event)">
-            <input type="text" id="messageText" autocomplete="off"/>
-            <button>Send</button>
-        </form>
-        <div id='messages'>
-        </div>
-        <script>
-            var ws = new WebSocket("ws://localhost:8080/ws");
-            ws.onmessage = function(event) {
-                var messages = document.getElementById('messages')
-                var message = document.createElement('div')
-                var content = document.createTextNode(event.data)
-                message.appendChild(content)
-                messages.appendChild(message)
-            };
-            function sendMessage(event) {
-                var input = document.getElementById("messageText")
-                ws.send(input.value)
-                input.value = ''
-                event.preventDefault()
-            }
-        </script>
-    </body>
-</html>
-"""
+
+class Shell:
+    def __init__(self) -> None:
+        self.pids = []
+
+    def executor(self, data):
+        proc = subprocess.Popen(data.split(), stdout=subprocess.PIPE)
+        self.pids.append(proc.pid)
+        yield json.dumps({"pid": proc.pid}) + "\n"
+        for line in iter(proc.stdout.readline, ''):
+            if not line:
+                break
+            yield line
+
+
+app.shell = Shell()
 
 
 @app.get("/", tags=['status'])
@@ -49,25 +41,39 @@ async def health_check():
     }
 
 
-@app.get("/ui")
-async def get():
-    return HTMLResponse(html)
-
-
 @app.websocket("/ws")
 async def shell(websocket: WebSocket):
     await websocket.accept()
     while True:
         data = await websocket.receive_text()
-        proc = subprocess.Popen(['ping','ya.ru', '-c', '3'],stdout=subprocess.PIPE)
-        for line in iter(proc.stdout.readline,''):
-            if not line:
-                break
-            await websocket.send_text(f"{line.rstrip()}")
-            
+        try:
+            proc = subprocess.Popen(data.split(), stdout=subprocess.PIPE)
+            for line in iter(proc.stdout.readline, ''):
+                if not line:
+                    break
+                await websocket.send_text(f"{line.rstrip()}")
+        except Exception as e:
+            await websocket.send_text(f"Error: {e}")
 
-        
-            
+
+@app.get("/processes")
+async def get_active_processes():
+    return app.shell.pids
+
+
+@app.get("/kill")
+async def kill_process(pid: int):
+    try:
+        os.kill(pid, signal.SIGKILL)
+    except ProcessLookupError:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="No process with such id")
+
+
+@app.post("/exec")
+async def stream(command: CommandExecIn):
+    return StreamingResponse(app.shell.executor(command.command), media_type='text/event-stream')
+
 
 if __name__ == "__main__":
     uvicorn.run("main:app", port=8080, host="0.0.0.0", reload=True)
