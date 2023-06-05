@@ -6,7 +6,7 @@ name = "pypi"
 [packages]
 fastapi = "*"
 uvicorn = "*"
-websockets = "*"
+jinja2 = "*"
 
 [dev-packages]
 

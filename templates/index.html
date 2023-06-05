@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Web Terminal</title>
+</head>
+
+
+<body>
+    <h1>Web Terminal</h1>
+    <form id="bash_form">
+        <input type="text" id="commandText" autocomplete="off" />
+        <button>Exec</button>
+    </form>
+
+    <div id='output'>
+
+    </div>
+
+
+    <script>
+
+        async function exec(command) {
+            const response = await fetch('http://localhost:8080/exec', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json;charset=utf-8'
+                },
+                body: JSON.stringify({ "command": command })
+            });
+            const reader = response.body.pipeThrough(new TextDecoderStream())
+                .getReader();
+            while (true) {
+                const { value, done } = await reader.read();
+                if (done) break;
+                addLine(value);
+            }
+        }
+
+        function addLine(text) {
+            var messages = document.getElementById('output');
+            var message = document.createElement('div');
+            var content = document.createTextNode(text);
+            message.appendChild(content);
+            messages.appendChild(message);
+        }
+        document.getElementById("bash_form").addEventListener("submit", (event) => {
+            event.preventDefault();
+            var input = document.getElementById("commandText");
+            addLine(`sh> ${input.value}`);
+            exec(input.value);
+        });
+        
+
+
+    </script>
+</body>
+
+</html>

@@ -1,12 +1,12 @@
-from fastapi import FastAPI, WebSocket, HTTPException, status
-from fastapi.responses import StreamingResponse
+from fastapi import FastAPI, HTTPException, status, Request
+from fastapi.responses import StreamingResponse, HTMLResponse
 import uvicorn
-import time
 import subprocess
 from pydantic import BaseModel
 import json
 import signal
 import os
+from fastapi.templating import Jinja2Templates
 
 
 class CommandExecIn(BaseModel):
@@ -14,6 +14,7 @@ class CommandExecIn(BaseModel):
 
 
 app = FastAPI(title="Web Terminal", version="0.0.1")
+templates = Jinja2Templates(directory="templates")
 
 
 class Shell:
@@ -21,9 +22,13 @@ class Shell:
         self.pids = []
 
     def executor(self, data):
-        proc = subprocess.Popen(data.split(), stdout=subprocess.PIPE)
+        proc = subprocess.Popen(
+            data.split(), stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         self.pids.append(proc.pid)
+
+        # Send header with running process id
         yield json.dumps({"pid": proc.pid}) + "\n"
+
         for line in iter(proc.stdout.readline, ''):
             if not line:
                 break
@@ -33,27 +38,9 @@ class Shell:
 app.shell = Shell()
 
 
-@app.get("/", tags=['status'])
-async def health_check():
-    return {
-        "name": app.title,
-        "version": app.version
-    }
-
-
-@app.websocket("/ws")
-async def shell(websocket: WebSocket):
-    await websocket.accept()
-    while True:
-        data = await websocket.receive_text()
-        try:
-            proc = subprocess.Popen(data.split(), stdout=subprocess.PIPE)
-            for line in iter(proc.stdout.readline, ''):
-                if not line:
-                    break
-                await websocket.send_text(f"{line.rstrip()}")
-        except Exception as e:
-            await websocket.send_text(f"Error: {e}")
+@app.get("/", response_class=HTMLResponse)
+async def index(request: Request):
+    return templates.TemplateResponse("index.html", {"request": request})
 
 
 @app.get("/processes")
@@ -65,6 +52,7 @@ async def get_active_processes():
 async def kill_process(pid: int):
     try:
         os.kill(pid, signal.SIGKILL)
+        app.shell.pids.remove(pid)
     except ProcessLookupError:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail="No process with such id")
