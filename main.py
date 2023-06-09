@@ -7,6 +7,7 @@ import json
 import signal
 import os
 from fastapi.templating import Jinja2Templates
+import psutil
 
 
 class CommandExecIn(BaseModel):
@@ -19,12 +20,13 @@ templates = Jinja2Templates(directory="templates")
 
 class Shell:
     def __init__(self) -> None:
-        self.pids = []
+        self.pids = {}
 
     def executor(self, data):
+        cmd = ["/bin/bash", "-c", data]
         proc = subprocess.Popen(
-            data.split(), stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-        self.pids.append(proc.pid)
+            cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        self.pids[proc.pid] = proc
 
         # Send header with running process id
         yield json.dumps({"pid": proc.pid}) + "\n"
@@ -51,8 +53,9 @@ async def get_active_processes():
 @app.get("/kill")
 async def kill_process(pid: int):
     try:
-        os.kill(pid, signal.SIGKILL)
-        app.shell.pids.remove(pid)
+        app.shell.pids[pid].terminate()
+        app.shell.pids[pid].wait()
+        del app.shell.pids[pid]
     except ProcessLookupError:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail="No process with such id")

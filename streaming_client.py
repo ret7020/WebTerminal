@@ -5,9 +5,11 @@ url = 'http://127.0.0.1:8080'
 
 while True:
     cmd = input(">")
+    if cmd == "exit":
+        exit(0)
     header = None
     try:
-        with httpx.stream('POST', f"{url}/exec", json={"command": cmd}) as r:
+        with httpx.stream('POST', f"{url}/exec", json={"command": cmd}, timeout=None) as r:
             for chunk in r.iter_raw():
                 line = chunk.decode("utf-8")
                 if header is None:
