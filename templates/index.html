@@ -14,16 +14,19 @@
     <form id="bash_form">
         <input type="text" id="commandText" autocomplete="off" />
         <button>Exec</button>
+        <button>Stop</button>
     </form>
 
     <div id='output'>
-
+        Execute first command!
     </div>
-
-
     <script>
 
         async function exec(command) {
+            if (command == "clear") {
+                document.getElementById('output').innerHTML = "";
+                return;
+            }
             const response = await fetch('http://localhost:8080/exec', {
                 method: 'POST',
                 headers: {
