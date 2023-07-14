@@ -1,19 +1,17 @@
 import pty
 import os
 
-output_bytes = []
+output_str = ""
 
 
 def read(fd):
-    with open("log.txt", "a") as file:
-        file.write("Callback\n")
+    global output_str
     data = os.read(fd, 1024)
-    output_bytes.append(data)
+    # output_str += data.decode("utf-8")
+    with open("log.txt", "a") as fd:
+        fd.write(f"{data.decode('utf-8')}")
     return data
 
 
-try:
-    pty.spawn(["htop"], read)
-    output = str(output_bytes)
-except KeyboardInterrupt:
-    print(output_bytes)
+pty.spawn(["/bin/bash", "-c", "ls -lh"], read)
+# print("Process finished")

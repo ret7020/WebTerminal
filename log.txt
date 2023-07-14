@@ -1,74 +1,22 @@
-Callback
-Callback
-Callback
-Callback
-Callback
-Callback
-Callback
-Callback
-Callback
-Callback
-Callback
-Callback
-Callback
-Callback
-Callback
-Callback
-Callback
-Callback
-Callback
-Callback
-Callback
-Callback
-Callback
-Callback
-Callback
-Callback
-Callback
-Callback
-Callback
-Callback
-Callback
-Callback
-Callback
-Callback
-Callback
-Callback
-Callback
-Callback
-Callback
-Callback
-Callback
-Callback
-Callback
-Callback
-Callback
-Callback
-Callback
-Callback
-Callback
-Callback
-Callback
-Callback
-Callback
-Callback
-Callback
-Callback
-Callback
-Callback
-Callback
-Callback
-Callback
-Callback
-Callback
-Callback
-Callback
-Callback
-Callback
-Callback
-Callback
-Callback
-Callback
-Callback
-Callback
-Callback
+PING 8.8.8.8 (8.8.8.8) 56(84) bytes of data.
+^C
+--- 8.8.8.8 ping statistics ---
+4 packets transmitted, 0 received, 100% packet loss, time 3063ms
+
+PING 8.8.8.8 (8.8.8.8) 56(84) bytes of data.
+^C
+--- 8.8.8.8 ping statistics ---
+4 packets transmitted, 0 received, 100% packet loss, time 3078ms
+
+total 56K
+-rw-rw-r-- 1 stephan stephan   42 июл 14 12:37 config.py
+-rw-rw-r-- 1 stephan stephan  302 июл 14 12:56 log.txt
+-rw-rw-r-- 1 stephan stephan 3,0K июл 14 12:48 main.py
+-rw-rw-r-- 1 stephan stephan  220 июл 14 10:04 Pipfile
+-rw-rw-r-- 1 stephan stephan  16K июл 14 10:04 Pipfile.lock
+-rw-rw-r-- 1 stephan stephan  319 июл 14 12:56 pty_based_client.py
+drwxrwxr-x 2 stephan stephan 4,0K июл 14 12:48 __pycache__
+-rw-rw-r-- 1 stephan stephan   68 июл 14 10:04 README.md
+-rw-rw-r-- 1 stephan stephan  579 июл 14 10:04 streaming_client.py
+drwxrwxr-x 2 stephan stephan 4,0K июл 14 10:04 templates
+-rw-rw-r-- 1 stephan stephan  884 июл 14 10:04 test.py

@@ -8,7 +8,7 @@ import os
 from fastapi.templating import Jinja2Templates
 from config import SHELL, HOME
 import pty
-
+import time
 
 class CommandExecIn(BaseModel):
     command: str
@@ -54,12 +54,15 @@ class PtyShell:
     def __init__(self) -> None:
         pass
 
-    def pty_callback(fd):
-        data = os.read(fd, 1024)
+    def pty_callback(self, fd):
+        print("Callback")
+        data = os.read(fd, 1024).decode("utf-8")
         print(data)
 
     def executor(self, cmd):
-        pty.spawn(["htop"], self.pty_callback)
+        pty.spawn([cmd], self.pty_callback)
+        pass
+        
 
 
 
@@ -93,7 +96,7 @@ async def exec(command: CommandExecIn):
 
 @app.post("/exec_pty")
 async def exec_pty(command: CommandExecIn):
-    return StreamingResponse()
+    return StreamingResponse(app.pty_shell.executor(command.command), media_type='text/event-stream')
 
 if __name__ == "__main__":
     uvicorn.run("main:app", port=8080, host="0.0.0.0", reload=True)
